@@ -1,0 +1,2083 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRL Portföy Takip Sistemi</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  :root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #21262d;
+    --border: #30363d;
+    --border2: #444c56;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --text3: #6e7681;
+    --accent: #1f6feb;
+    --accent2: #388bfd;
+    
+    /* TRL Colors */
+    --trl1: #6e40c9; --trl1l: #2d1f5a;
+    --trl2: #7e4cc9; --trl2l: #321e5a;
+    --trl3: #1f6feb; --trl3l: #0c2d6b;
+    --trl4: #1a7f64; --trl4l: #0a3328;
+    --trl5: #2ea043; --trl5l: #0f3a1a;
+    --trl6: #9e6a03; --trl6l: #3d2800;
+    --trl7: #e36209; --trl7l: #5a2500;
+    --trl8: #cf222e; --trl8l: #4a0d10;
+    --trl9: #b91c1c; --trl9l: #450a0a;
+    
+    --phase-research: #6e40c9;
+    --phase-dev: #1f6feb;
+    --phase-comm: #2ea043;
+    
+    --modal-bg: rgba(1,4,9,0.85);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, #1f6feb, #6e40c9);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: #fff;
+  }
+  .logo-text { font-size: 15px; font-weight: 600; }
+  .logo-sub { font-size: 11px; color: var(--text2); margin-top: 1px; }
+
+  .header-actions { display: flex; align-items: center; gap: 10px; }
+  .btn {
+    padding: 7px 16px; border-radius: 6px; font-size: 13px;
+    font-weight: 500; cursor: pointer; border: none; transition: all .15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-ghost {
+    background: transparent; color: var(--text2);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { background: var(--bg3); color: var(--text); }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+  .btn-danger { background: #cf222e; color: #fff; }
+  .btn-danger:hover { background: #a1171f; }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    display: flex; gap: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    overflow-x: auto;
+  }
+  .stat-item {
+    padding: 12px 24px;
+    border-right: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .stat-val { font-size: 22px; font-weight: 700; line-height: 1; }
+  .stat-lbl { font-size: 11px; color: var(--text2); margin-top: 3px; text-transform: uppercase; letter-spacing: .5px; }
+
+  /* ── MAIN LAYOUT ── */
+  .main { display: flex; height: calc(100vh - 109px); }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 280px; min-width: 280px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-section { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .sidebar-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 8px; }
+
+  .filter-group { display: flex; flex-direction: column; gap: 4px; }
+  .filter-btn {
+    padding: 6px 10px; border-radius: 5px; font-size: 12px;
+    cursor: pointer; background: transparent; border: none;
+    color: var(--text2); text-align: left; transition: all .1s;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .filter-btn:hover { background: var(--bg3); color: var(--text); }
+  .filter-btn.active { background: var(--bg3); color: var(--text); }
+  .filter-btn .count {
+    background: var(--bg3); border-radius: 10px;
+    padding: 1px 7px; font-size: 11px; color: var(--text3);
+  }
+  .filter-btn.active .count { background: var(--accent); color: #fff; }
+
+  .trl-filter-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 10px; border-radius: 5px;
+    cursor: pointer; transition: background .1s;
+  }
+  .trl-filter-item:hover { background: var(--bg3); }
+  .trl-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .trl-filter-label { font-size: 12px; color: var(--text2); flex: 1; }
+  .trl-filter-count { font-size: 11px; color: var(--text3); }
+
+  .project-list { flex: 1; overflow-y: auto; padding: 8px; }
+  .project-card {
+    padding: 10px 12px; border-radius: 6px;
+    border: 1px solid var(--border);
+    margin-bottom: 6px; cursor: pointer;
+    background: var(--bg3); transition: all .15s;
+  }
+  .project-card:hover { border-color: var(--border2); background: #2d333b; }
+  .project-card.selected { border-color: var(--accent); background: #0c2d6b22; }
+  .pc-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; margin-bottom: 6px; }
+  .pc-name { font-size: 13px; font-weight: 500; line-height: 1.3; }
+  .trl-badge {
+    font-size: 10px; font-weight: 700; padding: 2px 7px;
+    border-radius: 4px; flex-shrink: 0; letter-spacing: .5px;
+  }
+  .pc-meta { font-size: 11px; color: var(--text2); }
+  .pc-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+  .tag {
+    font-size: 10px; padding: 2px 7px; border-radius: 3px;
+    background: var(--bg); color: var(--text3);
+    border: 1px solid var(--border);
+  }
+
+  /* ── CANVAS AREA ── */
+  .canvas-area {
+    flex: 1; overflow: auto;
+    padding: 24px;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+
+  /* TOOLBAR */
+  .toolbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .search-wrap { position: relative; flex: 1; max-width: 300px; }
+  .search-wrap input {
+    width: 100%; padding: 7px 12px 7px 32px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); font-size: 13px;
+    outline: none;
+  }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-wrap::before {
+    content: '🔍'; position: absolute; left: 10px; top: 50%;
+    transform: translateY(-50%); font-size: 12px;
+  }
+  .view-toggle { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .view-btn {
+    padding: 6px 14px; font-size: 12px; cursor: pointer;
+    background: transparent; border: none; color: var(--text2); transition: all .1s;
+  }
+  .view-btn.active { background: var(--accent); color: #fff; }
+
+  /* TRL FUNNEL VIEW */
+  .funnel-container { flex: 1; }
+  .funnel-header {
+    display: grid;
+    grid-template-columns: 80px repeat(9, 1fr);
+    gap: 4px; margin-bottom: 8px; padding: 0 4px;
+  }
+  .funnel-header-label { font-size: 10px; font-weight: 600; color: var(--text3); text-align: center; }
+  .phase-labels {
+    display: grid;
+    grid-template-columns: 80px 3fr 3fr 3fr;
+    gap: 4px; margin-bottom: 4px; padding: 0 4px;
+  }
+  .phase-label {
+    text-align: center; font-size: 11px; font-weight: 600; padding: 4px;
+    border-radius: 4px; letter-spacing: .5px;
+  }
+  .phase-label.research { background: #2d1f5a; color: #9d7fe3; }
+  .phase-label.dev { background: #0c2d6b; color: #58a6ff; }
+  .phase-label.comm { background: #0f3a1a; color: #3fb950; }
+
+  .funnel-grid {
+    display: grid;
+    grid-template-columns: 80px repeat(9, 1fr);
+    gap: 4px; padding: 0 4px;
+  }
+  .funnel-row-label {
+    display: flex; align-items: center; justify-content: flex-end;
+    padding-right: 8px; font-size: 11px; color: var(--text3);
+  }
+  .trl-column {
+    border-radius: 8px; padding: 8px 4px; min-height: 120px;
+    display: flex; flex-direction: column; gap: 6px;
+    position: relative; transition: background .15s;
+  }
+  .trl-column:hover { background: rgba(255,255,255,.03); }
+  .trl-col-header {
+    text-align: center; font-size: 11px; font-weight: 700;
+    padding: 4px; border-radius: 4px; margin-bottom: 4px;
+    cursor: default;
+  }
+  .trl-col-drop {
+    flex: 1; border: 2px dashed transparent; border-radius: 6px;
+    transition: border-color .15s; padding: 4px;
+    display: flex; flex-direction: column; gap: 4px;
+    min-height: 80px;
+  }
+  .trl-col-drop.drag-over { border-color: var(--accent2); background: #1f6feb11; }
+
+  /* PROJECT BUBBLE */
+  .proj-bubble {
+    border-radius: 6px; padding: 8px 10px;
+    cursor: grab; transition: all .15s;
+    border: 1px solid;
+    position: relative;
+    user-select: none;
+  }
+  .proj-bubble:hover { transform: translateY(-1px); }
+  .proj-bubble:active { cursor: grabbing; }
+  .proj-bubble.dragging { opacity: .4; }
+  .pb-name { font-size: 11px; font-weight: 600; line-height: 1.3; margin-bottom: 3px; }
+  .pb-sub { font-size: 10px; opacity: .7; }
+  .pb-actions {
+    position: absolute; top: 4px; right: 4px;
+    display: none; gap: 3px;
+  }
+  .proj-bubble:hover .pb-actions { display: flex; }
+  .pb-btn {
+    width: 18px; height: 18px; border-radius: 3px;
+    border: none; cursor: pointer; font-size: 10px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.4); color: #fff; transition: background .1s;
+  }
+  .pb-btn:hover { background: rgba(0,0,0,.7); }
+
+  /* LIST VIEW */
+  .list-view { flex: 1; }
+  .list-table { width: 100%; border-collapse: collapse; }
+  .list-table th {
+    text-align: left; padding: 8px 12px; font-size: 11px;
+    font-weight: 600; color: var(--text3); text-transform: uppercase;
+    letter-spacing: .5px; border-bottom: 1px solid var(--border);
+    background: var(--bg2); position: sticky; top: 0; z-index: 5;
+  }
+  .list-table td { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid var(--border); }
+  .list-table tr:hover td { background: var(--bg3); }
+  .list-table tr { cursor: pointer; }
+  .progress-bar {
+    height: 4px; border-radius: 2px; background: var(--border);
+    overflow: hidden; width: 80px;
+  }
+  .progress-fill { height: 100%; border-radius: 2px; transition: width .3s; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: var(--modal-bg);
+    z-index: 1000; display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 12px; width: 560px; max-width: 95vw;
+    max-height: 90vh; overflow-y: auto;
+    transform: scale(.95); transition: transform .2s;
+  }
+  .modal-overlay.open .modal { transform: scale(1); }
+  .modal-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-title { font-size: 16px; font-weight: 600; }
+  .modal-close {
+    width: 28px; height: 28px; border-radius: 6px;
+    background: var(--bg3); border: none; color: var(--text2);
+    cursor: pointer; font-size: 16px; display: flex;
+    align-items: center; justify-content: center;
+  }
+  .modal-close:hover { background: var(--border); color: var(--text); }
+  .modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+  .modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-label { font-size: 12px; font-weight: 500; color: var(--text2); }
+  .form-input, .form-select, .form-textarea {
+    padding: 8px 12px; background: var(--bg3);
+    border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-size: 13px; outline: none;
+    transition: border-color .15s;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--accent);
+  }
+  .form-textarea { resize: vertical; min-height: 80px; font-family: inherit; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-select option { background: var(--bg2); }
+
+  .trl-selector {
+    display: grid; grid-template-columns: repeat(9, 1fr); gap: 4px;
+  }
+  .trl-sel-btn {
+    padding: 8px 4px; border-radius: 6px; font-size: 12px;
+    font-weight: 700; cursor: pointer; border: 2px solid transparent;
+    text-align: center; transition: all .15s; background: var(--bg3);
+    color: var(--text2);
+  }
+  .trl-sel-btn:hover { border-color: var(--border2); color: var(--text); }
+  .trl-sel-btn.selected { color: #fff; }
+
+  .trl-desc {
+    padding: 10px 12px; background: var(--bg3);
+    border-radius: 6px; border-left: 3px solid var(--accent);
+    font-size: 12px; color: var(--text2); line-height: 1.5;
+  }
+
+  /* DETAIL PANEL */
+  .detail-panel {
+    width: 320px; min-width: 320px;
+    background: var(--bg2);
+    border-left: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    transition: width .2s;
+  }
+  .detail-panel.closed { width: 0; min-width: 0; }
+  .dp-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .dp-title { font-size: 14px; font-weight: 600; }
+  .dp-body { padding: 16px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 14px; }
+  .dp-section-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 6px; }
+  .dp-field { margin-bottom: 10px; }
+  .dp-field-label { font-size: 11px; color: var(--text3); margin-bottom: 2px; }
+  .dp-field-value { font-size: 13px; color: var(--text); line-height: 1.5; }
+
+  .trl-progress-viz {
+    display: flex; gap: 3px; margin-top: 6px;
+  }
+  .trl-pip {
+    flex: 1; height: 6px; border-radius: 3px; background: var(--border);
+    transition: background .3s;
+  }
+  .trl-pip.filled { }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(60px);
+    background: var(--bg2); border: 1px solid var(--border);
+    color: var(--text); padding: 10px 20px; border-radius: 8px;
+    font-size: 13px; z-index: 9999; transition: transform .25s;
+    box-shadow: 0 4px 20px rgba(0,0,0,.5);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: var(--phase-comm); }
+  .toast.error { border-color: var(--trl8); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  .hidden { display: none !important; }
+
+  /* ── TABS (detail panel) ── */
+  .dp-tabs { display:flex; border-bottom:1px solid var(--border); margin-bottom:12px; }
+  .dp-tab {
+    padding:8px 14px; font-size:12px; font-weight:500; cursor:pointer;
+    color:var(--text3); border-bottom:2px solid transparent; transition:all .15s;
+    background:none; border-top:none; border-left:none; border-right:none;
+  }
+  .dp-tab.active { color:var(--accent2); border-bottom-color:var(--accent2); }
+  .dp-tab-content { display:none; }
+  .dp-tab-content.active { display:block; }
+
+  /* ── CHECKLIST ── */
+  .checklist { display:flex; flex-direction:column; gap:5px; }
+  .check-item {
+    display:flex; align-items:flex-start; gap:8px; padding:7px 9px;
+    border-radius:5px; background:var(--bg3); border:1px solid var(--border);
+    transition:background .1s;
+  }
+  .check-item.done { opacity:.6; }
+  .check-item.done .check-label { text-decoration:line-through; color:var(--text3); }
+  .check-cb { width:15px; height:15px; flex-shrink:0; margin-top:1px; accent-color:var(--accent2); cursor:pointer; }
+  .check-label { font-size:12px; color:var(--text2); line-height:1.4; flex:1; }
+  .check-add { display:flex; gap:6px; margin-top:6px; }
+  .check-add input {
+    flex:1; padding:5px 9px; font-size:12px;
+    background:var(--bg3); border:1px solid var(--border);
+    border-radius:5px; color:var(--text); outline:none;
+  }
+  .check-add input:focus { border-color:var(--accent); }
+  .check-add button { padding:5px 10px; font-size:12px; }
+  .check-progress {
+    display:flex; align-items:center; gap:8px; margin-bottom:8px;
+  }
+  .check-pct { font-size:12px; font-weight:600; min-width:30px; }
+
+  /* ── BLOCKERS ── */
+  .blocker-item {
+    padding:8px 10px; border-radius:5px;
+    border-left:3px solid var(--trl8);
+    background:var(--bg3); margin-bottom:5px; position:relative;
+  }
+  .blocker-item.resolved { border-left-color:var(--phase-comm); opacity:.6; }
+  .blocker-text { font-size:12px; color:var(--text2); line-height:1.4; padding-right:50px; }
+  .blocker-meta { font-size:10px; color:var(--text3); margin-top:3px; }
+  .blocker-actions { position:absolute; top:6px; right:6px; display:flex; gap:4px; }
+  .blocker-btn {
+    padding:2px 7px; font-size:10px; border-radius:3px; border:none;
+    cursor:pointer; font-weight:500;
+  }
+  .blocker-btn.resolve { background:#0f3a1a; color:#3fb950; }
+  .blocker-btn.delete  { background:#4a0d10; color:#fca5a5; }
+
+  /* ── ŞİRKET HAFIZASI (memory panel) ── */
+  .memory-panel {
+    position:fixed; right:0; top:0; bottom:0; width:400px;
+    background:var(--bg2); border-left:1px solid var(--border);
+    z-index:200; display:flex; flex-direction:column;
+    transform:translateX(100%); transition:transform .25s;
+  }
+  .memory-panel.open { transform:translateX(0); }
+  .memory-header {
+    padding:14px 16px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between; flex-shrink:0;
+  }
+  .memory-body { flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:10px; }
+  .memory-section { }
+  .memory-section-title {
+    font-size:10px; font-weight:700; color:var(--text3);
+    text-transform:uppercase; letter-spacing:.8px;
+    margin-bottom:6px; display:flex; align-items:center; justify-content:space-between;
+  }
+  .memory-card {
+    padding:9px 11px; border-radius:6px; background:var(--bg3);
+    border:1px solid var(--border); margin-bottom:5px; position:relative;
+  }
+  .memory-card-type {
+    font-size:10px; font-weight:600; margin-bottom:3px; text-transform:uppercase; letter-spacing:.4px;
+  }
+  .memory-card-text { font-size:12px; color:var(--text2); line-height:1.5; }
+  .memory-card-meta { font-size:10px; color:var(--text3); margin-top:4px; }
+  .memory-del {
+    position:absolute; top:6px; right:6px; background:transparent;
+    border:none; color:var(--text3); cursor:pointer; font-size:14px;
+    line-height:1; padding:0 3px;
+  }
+  .memory-del:hover { color:var(--trl8); }
+  .memory-add-form { display:flex; flex-direction:column; gap:6px; padding:10px; background:var(--bg3); border-radius:6px; border:1px solid var(--border); }
+  .memory-add-form select, .memory-add-form textarea, .memory-add-form input {
+    padding:6px 9px; background:var(--bg2); border:1px solid var(--border);
+    border-radius:5px; color:var(--text); font-size:12px; outline:none; font-family:inherit;
+  }
+  .memory-add-form textarea { resize:vertical; min-height:60px; }
+  .memory-add-form select:focus, .memory-add-form textarea:focus { border-color:var(--accent); }
+  .memory-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:199;
+    display:none;
+  }
+  .memory-overlay.open { display:block; }
+  .mem-type-lesson  { color:#fcd34d; }
+  .mem-type-mistake { color:#fca5a5; }
+  .mem-type-standard{ color:#93c5fd; }
+  .mem-type-rule    { color:#86efac; }
+
+
+  /* ── SHARE MODAL ── */
+  .share-link-box {
+    display:flex; gap:6px; margin-top:8px;
+  }
+  .share-link-input {
+    flex:1; padding:8px 10px; background:var(--bg3);
+    border:1px solid var(--border); border-radius:6px;
+    color:var(--text2); font-size:11px; outline:none;
+    font-family:var(--font-mono, monospace);
+    word-break:break-all;
+  }
+  .share-info {
+    padding:10px 12px; background:var(--bg3);
+    border-radius:6px; border-left:3px solid var(--accent);
+    font-size:12px; color:var(--text2); line-height:1.6;
+    margin-bottom:10px;
+  }
+  .share-warning {
+    padding:8px 12px; background:#3d2800;
+    border-radius:6px; border-left:3px solid #9e6a03;
+    font-size:11px; color:#fcd34d; line-height:1.5;
+    margin-top:8px;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">TRL</div>
+    <div>
+      <div class="logo-text">Teknoloji Portföy Takibi</div>
+      <div class="logo-sub">Kompozit Teknolojiler · TRL 1-9 Portföy</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ghost btn-sm" onclick="openMemory()" style="border-color:#6e40c977;color:#9d7fe3">🧠 Şirket Hafızası</button>
+    <button class="btn btn-ghost btn-sm" onclick="openShareModal()" style="border-color:#1f6feb77;color:#58a6ff">🔗 Paylaş</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportData()">⬇ Dışa Aktar</button>
+    <button class="btn btn-ghost btn-sm" onclick="importData()">⬆ İçe Aktar</button>
+    <button class="btn btn-primary" onclick="openAddModal()">+ Yeni Proje</button>
+  </div>
+</header>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-val" id="stat-total">0</div>
+    <div class="stat-lbl">Toplam Proje</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-val" style="color:#9d7fe3" id="stat-research">0</div>
+    <div class="stat-lbl">Araştırma (TRL 1-3)</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-val" style="color:#58a6ff" id="stat-dev">0</div>
+    <div class="stat-lbl">Geliştirme (TRL 4-6)</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-val" style="color:#3fb950" id="stat-comm">0</div>
+    <div class="stat-lbl">Ticarileşme (TRL 7-9)</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-val" style="color:#e36209" id="stat-critical">0</div>
+    <div class="stat-lbl">Kritik / Riskli</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-title">Görünüm</div>
+      <div class="filter-group">
+        <button class="filter-btn active" onclick="setPhaseFilter('all', this)">
+          <span>Tüm Projeler</span>
+          <span class="count" id="fc-all">0</span>
+        </button>
+        <button class="filter-btn" onclick="setPhaseFilter('research', this)">
+          <span>🔬 Araştırma (1-3)</span>
+          <span class="count" id="fc-research">0</span>
+        </button>
+        <button class="filter-btn" onclick="setPhaseFilter('development', this)">
+          <span>⚙️ Geliştirme (4-6)</span>
+          <span class="count" id="fc-dev">0</span>
+        </button>
+        <button class="filter-btn" onclick="setPhaseFilter('commercialisation', this)">
+          <span>🚀 Ticarileşme (7-9)</span>
+          <span class="count" id="fc-comm">0</span>
+        </button>
+        <button class="filter-btn" onclick="setPhaseFilter('critical', this)">
+          <span>⚠️ Kritik / Riskli</span>
+          <span class="count" id="fc-crit">0</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">TRL Seviyesi</div>
+      <div id="trl-filter-list">
+        <!-- dynamically generated -->
+      </div>
+    </div>
+
+    <div class="sidebar-section" style="flex:1;overflow:hidden;display:flex;flex-direction:column;padding-bottom:0">
+      <div class="sidebar-title">Projeler</div>
+      <div class="project-list" id="sidebar-project-list">
+        <!-- dynamically generated -->
+      </div>
+    </div>
+  </div>
+
+  <!-- CANVAS -->
+  <div class="canvas-area" id="canvas-area">
+    <div class="toolbar">
+      <div class="search-wrap">
+        <input type="text" placeholder="Proje ara..." id="search-input" oninput="filterProjects()" />
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="view-toggle">
+          <button class="view-btn active" onclick="setView('funnel', this)">Huni</button>
+          <button class="view-btn" onclick="setView('list', this)">Liste</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FUNNEL VIEW -->
+    <div id="funnel-view">
+      <div class="phase-labels">
+        <div></div>
+        <div class="phase-label research">ARAŞTIRMA</div>
+        <div class="phase-label dev">GELİŞTİRME</div>
+        <div class="phase-label comm">TİCARİLEŞME</div>
+      </div>
+      <div class="funnel-header">
+        <div></div>
+        <div class="funnel-header-label">TRL 1</div>
+        <div class="funnel-header-label">TRL 2</div>
+        <div class="funnel-header-label">TRL 3</div>
+        <div class="funnel-header-label">TRL 4</div>
+        <div class="funnel-header-label">TRL 5</div>
+        <div class="funnel-header-label">TRL 6</div>
+        <div class="funnel-header-label">TRL 7</div>
+        <div class="funnel-header-label">TRL 8</div>
+        <div class="funnel-header-label">TRL 9</div>
+      </div>
+      <div class="funnel-grid" id="funnel-grid">
+        <div class="funnel-row-label" style="align-self:start;padding-top:12px">Projeler</div>
+        <!-- TRL columns 1-9 -->
+      </div>
+    </div>
+
+    <!-- LIST VIEW -->
+    <div id="list-view" class="hidden">
+      <table class="list-table">
+        <thead>
+          <tr>
+            <th>Proje Adı</th>
+            <th>TRL</th>
+            <th>Faz</th>
+            <th>Kategori</th>
+            <th>İlerleme</th>
+            <th>Durum</th>
+            <th>Son Güncelleme</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="list-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- DETAIL PANEL -->
+  <div class="detail-panel closed" id="detail-panel">
+    <div class="dp-header">
+      <div class="dp-title" id="dp-title">Proje Detayı</div>
+      <button class="modal-close" onclick="closeDetail()">×</button>
+    </div>
+    <div class="dp-body" id="dp-body"></div>
+  </div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-overlay" id="proj-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Yeni Proje Ekle</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Proje / Ürün / Süreç Adı *</label>
+        <input class="form-input" id="f-name" placeholder="ör. Otonom İHA Navigasyon Sistemi" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kısa Açıklama</label>
+        <textarea class="form-textarea" id="f-desc" placeholder="Teknolojinin kısa tanımı..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Kategori</label>
+          <select class="form-select" id="f-category">
+            <option value="">Seç...</option>
+            <optgroup label="── Kompozit Ürünler ──">
+            <option value="Composite Sleeve">Composite Sleeve</option>
+            <option value="Basınçlı Tank">Basınçlı Tank</option>
+            <option value="Kompozit Boru & Plaka">Kompozit Boru & Plaka</option>
+            <option value="Yapısal Kompozit">Yapısal Kompozit</option>
+            </optgroup>
+            <optgroup label="── Platform & Yazılım ──">
+            <option value="YZ Tasarım Platformu">YZ Tasarım Platformu</option>
+            <option value="FEM & Simülasyon">FEM & Simülasyon</option>
+            </optgroup>
+            <optgroup label="── Ekipman & Altyapı ──">
+            <option value="Filament Sarma Makinesi">Filament Sarma Makinesi</option>
+            <option value="Üretim Ekipmanı">Üretim Ekipmanı</option>
+            </optgroup>
+            <optgroup label="── Sektör Uygulamaları ──">
+            <option value="İHA Sistemleri">İHA / Drone</option>
+            <option value="Havacılık & Uzay">Havacılık & Uzay</option>
+            <option value="Enerji & Hidrojen">Enerji & Hidrojen</option>
+            <option value="Spor & Tüketici">Spor & Tüketici</option>
+            </optgroup>
+            <option value="Diğer">Diğer</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Durum</label>
+          <select class="form-select" id="f-status">
+            <option value="active">Aktif</option>
+            <option value="hold">Beklemeye Alındı</option>
+            <option value="critical">Kritik / Riskli</option>
+            <option value="completed">Tamamlandı</option>
+            <option value="cancelled">İptal</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">TRL Seviyesi *</label>
+        <div class="trl-selector" id="trl-selector">
+          <!-- generated -->
+        </div>
+      </div>
+      <div class="trl-desc" id="trl-desc-text">TRL seviyesi seçin...</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Alt TRL İlerlemesi (%)</label>
+          <input class="form-input" type="number" id="f-progress" min="0" max="99" value="0" placeholder="0-99" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sorumlu Kişi</label>
+          <input class="form-input" id="f-owner" placeholder="Ad Soyad" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Başlangıç Tarihi</label>
+          <input class="form-input" type="date" id="f-start" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hedef Tarih</label>
+          <input class="form-input" type="date" id="f-target" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notlar</label>
+        <textarea class="form-textarea" id="f-notes" placeholder="Riskler, bağımlılıklar, önemli notlar..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm hidden" id="btn-delete" onclick="deleteProject()">Sil</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="closeModal()">İptal</button>
+        <button class="btn btn-primary" onclick="saveProject()">Kaydet</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════
+const TRL_COLORS = {
+  1: {bg:'#2d1f5a', border:'#6e40c9', text:'#c4b5fd', dot:'#7c3aed'},
+  2: {bg:'#321e5a', border:'#7e4cc9', text:'#c4b5fd', dot:'#8b5cf6'},
+  3: {bg:'#0c2d6b', border:'#1f6feb', text:'#93c5fd', dot:'#3b82f6'},
+  4: {bg:'#0c2d6b', border:'#1a7f64', text:'#6ee7b7', dot:'#10b981'},
+  5: {bg:'#0f3a1a', border:'#2ea043', text:'#86efac', dot:'#22c55e'},
+  6: {bg:'#3d2800', border:'#9e6a03', text:'#fcd34d', dot:'#f59e0b'},
+  7: {bg:'#5a2500', border:'#e36209', text:'#fdba74', dot:'#f97316'},
+  8: {bg:'#4a0d10', border:'#cf222e', text:'#fca5a5', dot:'#ef4444'},
+  9: {bg:'#450a0a', border:'#b91c1c', text:'#fca5a5', dot:'#dc2626'},
+};
+
+const TRL_DESCRIPTIONS = {
+  1: 'Temel prensipler gözlemlendi ve raporlandı. Bilimsel araştırma başlangıcı.',
+  2: 'Teknoloji konsepti ve/veya uygulama formüle edildi.',
+  3: 'Analitik ve deneysel kritik fonksiyon veya konsept kanıtı.',
+  4: 'Laboratuvar ortamında bileşen ve/veya ekmek kartı doğrulaması.',
+  5: 'İlgili ortamda bileşen ve/veya ekmek kartı doğrulaması.',
+  6: 'İlgili ortamda sistem/alt sistem modeli veya prototip gösterimi.',
+  7: 'Operasyonel ortamda sistem prototip gösterimi.',
+  8: 'Sistem tamamlandı ve vasıflı test başarılı.',
+  9: 'Gerçek sistem operasyonel ortamda gösterildi (mevcut form).',
+};
+
+const PHASES = {
+  research: [1,2,3],
+  development: [4,5,6],
+  commercialisation: [7,8,9],
+};
+
+const STATUS_LABELS = {
+  active: {label:'Aktif', color:'#22c55e'},
+  hold: {label:'Beklemede', color:'#f59e0b'},
+  critical: {label:'Kritik', color:'#ef4444'},
+  completed: {label:'Tamamlandı', color:'#3b82f6'},
+  cancelled: {label:'İptal', color:'#6b7280'},
+};
+
+// ── Storage ──
+function loadProjects() {
+  try {
+    return JSON.parse(localStorage.getItem('trl_projects') || '[]');
+  } catch(e) { return []; }
+}
+function saveProjects(projects) {
+  localStorage.setItem('trl_projects', JSON.stringify(projects));
+  localStorage.setItem('trl_data_version', DATA_VERSION);
+}
+
+const _PRELOAD_DATA = [
+  {
+    id: "p001",
+    name: "Sleeve AI Tasarım Platformu",
+    desc: "Elektrik motorları için yapay zeka destekli sleeve tasarım platformu. Yüzlerce FEM analizi ve fiziki testlerle kalibre edilen YZ sayesinde haftalarca süren Ar-Ge süreçlerini günlere indiriyor.",
+    category: "Yazılım & Yapay Zeka",
+    trl: 4,
+    progress: 30,
+    status: "active",
+    owner: "",
+    start: "",
+    target: "",
+    notes: "FEM yetkinliği mevcut. YZ yaklaşımı danışman tarafından geliştirildi. Ürün için FEM + üretim + YZ entegrasyonu gerekiyor. Ar-Ge raporu ve iş paketleri hazır.",
+    updated: new Date().toISOString(),
+    phase_note: "Lab doğrulama: Bileşenler ayrı çalışıyor, entegrasyon yok"
+  },
+  {
+    id: "p002",
+    name: "Yüksek Basınçlı Tank AI Platformu",
+    desc: "Tip-3/Tip-4 kompozit tanklar için YZ destekli tasarım platformu. Kubbe geometrisi öngörülemezliği, FEM-fiziksel sapma ve deneme-yanılma sorunlarını çözüyor.",
+    category: "Yazılım & Yapay Zeka",
+    trl: 4,
+    progress: 40,
+    status: "active",
+    owner: "",
+    start: "",
+    target: "",
+    notes: "FEM yetkinliği mevcut. Parametrik kubbe eğrisi bilgisayarda çözüldü. Hedef: TRL 7 prototip + Platform v1.0. Ar-Ge raporu ve iş paketleri hazır.",
+    updated: new Date().toISOString()
+  },
+  {
+    id: "p003",
+    name: "Standart Composite Sleeve (Seri Üretim)",
+    desc: "Elektrik motorları için karbon/cam fiber kompozit sleeve. Filament winding ıslak sarım. Motor üzerine doğrudan sarım veya kalıp üretimi ile sleeve şeklinde teslim.",
+    category: "Malzeme & Yapı",
+    trl: 9,
+    progress: 100,
+    status: "completed",
+    owner: "",
+    start: "",
+    target: "",
+    notes: "Nakit akışının %95'i. ~35.000 adet üretim gerçekleştirildi. Seri üretim seviyesinde. Hem doğrudan sarım hem kalıpla sleeve üretimi yapılıyor.",
+    updated: new Date().toISOString()
+  },
+  {
+    id: "p004",
+    name: "Yenilikçi Nano Composite Sleeve",
+    desc: "Nano parçacık içeren sleeve. Benzer kompozit kılıflara göre %25 daha iyi ısı iletimi. Elektrik motoru mıknatıslarından ısıyı daha etkin dışarı atıyor.",
+    category: "Malzeme & Yapı",
+    trl: 6,
+    progress: 20,
+    status: "active",
+    owner: "",
+    start: "",
+    target: "",
+    notes: "Prototip denemeleri yapıldı. TRL 7 seviyesinde resmi testler henüz gerçekleştirilmedi. Piyasada farklılaşma hedefi.",
+    updated: new Date().toISOString()
+  },
+  {
+    id: "p005",
+    name: "Drone Dış Kabuk Üretimi",
+    desc: "Prepreg teknolojisi ile drone dış kabuk üretimi. Tasarım müşterilere ait. Epoksi kalıp dışarıda yaptırılıyor, kompozit üretim kendi altyapıda.",
+    category: "İHA Sistemleri",
+    trl: 7,
+    progress: 40,
+    status: "active",
+    owner: "",
+    start: "",
+    target: "",
+    notes: "2 adet başarılı üretim gerçekleştirildi. Operasyonel ortam prototip gösterimi tamamlandı.",
+    updated: new Date().toISOString()
+  },
+  {
+    id: "p006",
+    name: "Kompozit Plaka Üretimi",
+    desc: "Vakum infüzyon ve prepreg teknolojisiyle kompozit plaka üretimi. Drone firmalarının talebiyle sipariş üzerine üretim.",
+    category: "Malzeme & Yapı",
+    trl: 8,
+    progress: 70,
+    status: "active",
+    owner: "",
+    start: "",
+    target: "",
+    notes: "5 farklı sipariş üretimi başarıyla gerçekleştirildi. Hem vakum infüzyon hem prepreg yetkinliği mevcut.",
+    updated: new Date().toISOString()
+  },
+  {
+    id: "p007",
+    name: "CF / GF Boru Üretimi",
+    desc: "Filament winding ıslak sarım ile tailor-made karbon/cam fiber boru. Çap: 500mm'ye kadar, uzunluk: 2500mm'ye kadar. Ismarlamaya göre üretim.",
+    category: "Malzeme & Yapı",
+    trl: 9,
+    progress: 100,
+    status: "active",
+    owner: "",
+    start: "",
+    target: "",
+    notes: "~100 adet üretim gerçekleştirildi. Talep odaklı seri üretim kapasitesi mevcut.",
+    updated: new Date().toISOString()
+  },
+  {
+    id: "p008",
+    name: "Standart Tip-3 Kompozit Tank",
+    desc: "Metal liner üzerine karbon fiber sarımlı Tip-3 yüksek basınçlı tank. Havacılık sektörü için geleneksel tasarım metoduyla üretim.",
+    category: "Malzeme & Yapı",
+    trl: 8,
+    progress: 80,
+    status: "active",
+    owner: "",
+    start: "",
+    target: "",
+    notes: "Havacılık firmasına 10 adet üretildi ve satıldı. Müşteri validasyon testlerinden başarıyla geçildi. Liner müşteriden geldi, kompozit tasarım ve sarım bizim.",
+    updated: new Date().toISOString()
+  },
+  {
+    id: "p009",
+    name: "Standart Tip-4 Kompozit Tank",
+    desc: "Polimerik liner üzerine karbon fiber sarımlı Tip-4 tank. TÜBİTAK projesi. FEM analizi, geleneksel tasarım metoduyla üretim ve patlatma testi.",
+    category: "Malzeme & Yapı",
+    trl: 6,
+    progress: 60,
+    status: "hold",
+    owner: "",
+    start: "",
+    target: "",
+    notes: "TÜBİTAK projesi. FEM analizleri ve üretimler gerçekleşti. Patlatma testlerinde bazı prototipler başarılı, bazıları değil. Bu sebeple yenilikçi tasarım metoduna geçildi.",
+    updated: new Date().toISOString()
+  },
+  {
+    id: "p010",
+    name: "Yenilikçi Liner Tasarımı (700 bar)",
+    desc: "Bor nitrür (h-BN) nano malzeme katkılı polimerik liner. 700 bar için hidrojen geçirgenliğini minimize eden yeni formülasyon. TÜBİTAK 1512/1507 kapsamında.",
+    category: "Malzeme & Yapı",
+    trl: 3,
+    progress: 70,
+    status: "active",
+    owner: "",
+    start: "",
+    target: "",
+    notes: "Yenilikçi polimerik formül oluşturuldu. Uretec'te plaka boyutunda üretimler yapıldı. Farklı nano derişimlerde sızdırmazlık testleri şu an yürütülüyor. Sonraki adım: silindirik üretim + karbon fiber sarım + tam testler.",
+    updated: new Date().toISOString()
+  },
+  {
+    id: "p011",
+    name: "Yenilikçi Boss Tasarımı (380 bar)",
+    desc: "Metal valf ağzı (boss) ve polimer liner (YYPE) arayüz mimarisinde termo-mekanik uyumsuzluk sorununu çözen yenilikçi boss tasarımı. Müşteri: Aygaz. TÜBİTAK kapsamı.",
+    category: "Güdüm & Kontrol",
+    trl: 3,
+    progress: 40,
+    status: "active",
+    owner: "",
+    start: "",
+    target: "",
+    notes: "FEM analizleri ve yenilikçi yaklaşım araştırması aşamasında. Standart boss tasarım ve üretimi tamamlandı, mekanik dayanım kanıtlandı. Hedef: TRL 6, 24 ayda. Sızdırmazlık dezavantajı çözülecek.",
+    updated: new Date().toISOString()
+  },
+  {
+    id: "p012",
+    name: "Filament Sarma Tension Sistemi",
+    desc: "Servo motorlu anlık gerginlik ayarlama sistemi. Fiber rulo çapı azaldıkça otomatik kompanse eder. Mekanik tasarım + otomasyon entegrasyonu.",
+    category: "Yazılım & Yapay Zeka",
+    trl: 9,
+    progress: 100,
+    status: "completed",
+    owner: "",
+    start: "",
+    target: "",
+    notes: "Devreye alındı, kusursuz çalışıyor. Mekanik tasarım tamamen şirkete ait, otomasyon DRK'dan hizmet alımı. Rakip sistemler başlangıçta sabit gerginlik veriyor; bu sistem sürekli adapte ediyor.",
+    updated: new Date().toISOString()
+  },
+  {
+    id: "p013",
+    name: "4 Eksen Filament Sarma Makinesi",
+    desc: "TÜBİTAK projesiyle geliştirilen servo motorlu 4 eksen filament winding makinesi. Yazılım Cadfill (İngiltere), tüm mekanik tasarım şirkete ait.",
+    category: "Yazılım & Yapay Zeka",
+    trl: 9,
+    progress: 100,
+    status: "completed",
+    owner: "",
+    start: "",
+    target: "",
+    notes: "TÜBİTAK projesi. 4 eksen gerektiren tüm üretimler bu makinede gerçekleştiriliyor. CE belgesi yok. Servo motorlu, üst seviye.",
+    updated: new Date().toISOString()
+  },
+  {
+    id: "p014",
+    name: "2 Eksen Filament Sarma Makinesi",
+    desc: "TÜBİTAK projesiyle geliştirilen, yazılımı dahil tamamen şirkete ait 2 eksen filament winding makinesi. Tüm sleeve üretimleri bu makineyle.",
+    category: "Yazılım & Yapay Zeka",
+    trl: 9,
+    progress: 100,
+    status: "completed",
+    owner: "",
+    start: "",
+    target: "",
+    notes: "TÜBİTAK projesi. Yazılım dahil tüm tasarım şirkete ait. 2 eksen gerektiren tüm sleeve üretimleri bu makinede. CE belgesi yok. Step motorlu, giriş seviye.",
+    updated: new Date().toISOString()
+  },
+  {
+    id: "p015",
+    name: "Kürleme Fırını",
+    desc: "TÜBİTAK projesiyle geliştirilen, yazılımı dahil şirkete ait kürleme fırını. Tüm kompozit ürünlerin kürlenmesinde kullanılıyor.",
+    category: "Yazılım & Yapay Zeka",
+    trl: 8,
+    progress: 50,
+    status: "active",
+    owner: "",
+    start: "",
+    target: "",
+    notes: "TÜBİTAK projesi. Tüm üretimler bu fırında kürleniyor. CE belgesi yok. Giriş seviye, iyileştirmeye ihtiyaç var.",
+    updated: new Date().toISOString()
+  },
+  {
+    id: "p016",
+    name: "Roket Gövdesi Üretimi",
+    desc: "Roket takımları için filament winding ıslak sarım ile karbon/cam fiber kompozit roket gövdesi (boru). Tasarım müşterilere ait, üretim şirkette.",
+    category: "Malzeme & Yapı",
+    trl: 8,
+    progress: 60,
+    status: "active",
+    owner: "",
+    start: "",
+    target: "",
+    notes: "4 farklı roket takımına üretim gerçekleştirildi. Sözleşme/müşteri bazlı üretim modeli.",
+    updated: new Date().toISOString()
+  },
+  {
+    id: "p017",
+    name: "Kitesurf Karbon Fiber Board",
+    desc: "FEM optimizasyonlu ve YZ destekli performans analizli kitesurf tahtası. TC5 çekirdek + karbon fiber yapı. Sürdürülebilir malzeme hedefi.",
+    category: "Malzeme & Yapı",
+    trl: 5,
+    progress: 50,
+    status: "active",
+    owner: "",
+    start: "",
+    target: "",
+    notes: "İlk prototipler üretildi, profesyoneller tarafından suda denendi. Yeni tasarım iterasyonları ve testler kaldı. Yerli üretim azlığı fırsatı.",
+    updated: new Date().toISOString()
+  },
+  {
+    id: "p018",
+    name: "Drone Karbon Fiber Propeller",
+    desc: "Elektrik motoru üreticilerinin talebiyle drone propeller üretim denemesi. Piyasa geometrisi referans alınarak üretim uygulanabilirliği kanıtlandı.",
+    category: "İHA Sistemleri",
+    trl: 3,
+    progress: 30,
+    status: "hold",
+    owner: "",
+    start: "",
+    target: "",
+    notes: "Copy geometri ile ugly prototip üretildi. Üretim uygulanabilirliği kanıtlandı. Asıl hedef: özgün tasarım. Endüstriyel prototip değil. Çok basit üretim metodu.",
+    updated: new Date().toISOString()
+  },
+  {
+    id: "p019",
+    name: "Ampute Koşucu Karbon Fiber Blade",
+    desc: "TÜBİTAK Spor yarışması için ampute koşucu protez blade. Biyomekanik tasarım + karbon fiber üretim. En iyi 5 proje arasına girdi.",
+    category: "Malzeme & Yapı",
+    trl: 3,
+    progress: 20,
+    status: "hold",
+    owner: "",
+    start: "",
+    target: "",
+    notes: "Copy geometri ile ugly prototip üretildi. Üretim uygulanabilirliği kanıtlandı. Biyomekanik tasarım için akademi/üniversite iş birliği şart. En iyi 5 proje seçildi. Endüstriyel prototip değil.",
+    updated: new Date().toISOString()
+  }
+];
+
+// Versiyon kontrolü: eski/demo veri varsa temizle, şirket verisini yükle
+const DATA_VERSION = 'v2-company-2025';
+function initProjects() {
+  const storedVersion = localStorage.getItem('trl_data_version');
+  let stored = [];
+  if (storedVersion === DATA_VERSION) {
+    // Aynı versiyon: localStorage'daki kullanıcı düzenlemelerini koru
+    try { stored = JSON.parse(localStorage.getItem('trl_projects') || '[]'); } catch(e) {}
+  }
+  // Eski/demo veri varsa (farklı versiyon veya boş): sadece PRELOAD kullan
+  const preloadIds = new Set(_PRELOAD_DATA.map(p => p.id));
+  const userAdded = stored.filter(p => !preloadIds.has(p.id));
+  const storedMap = Object.fromEntries(stored.map(p => [p.id, p]));
+  const merged = _PRELOAD_DATA.map(p => storedMap[p.id] ? {...p, ...storedMap[p.id]} : p);
+  return [...merged, ...userAdded];
+}
+
+let projects = [];
+
+let editingId = null;
+let currentFilter = 'all';
+let currentView = 'funnel';
+let selectedProject = null;
+let selectedTRL = null;
+let searchTerm = '';
+
+function gen() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+// ═══════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════
+function getPhase(trl) {
+  if (trl<=3) return 'research';
+  if (trl<=6) return 'development';
+  return 'commercialisation';
+}
+function getTRLColor(trl) { return TRL_COLORS[trl] || TRL_COLORS[1]; }
+
+function filteredProjects() {
+  let ps = [...projects];
+  if (searchTerm) {
+    const s = searchTerm.toLowerCase();
+    ps = ps.filter(p => p.name.toLowerCase().includes(s) || (p.category||'').toLowerCase().includes(s) || (p.owner||'').toLowerCase().includes(s));
+  }
+  if (currentFilter === 'research') ps = ps.filter(p => getPhase(p.trl)==='research');
+  else if (currentFilter === 'development') ps = ps.filter(p => getPhase(p.trl)==='development');
+  else if (currentFilter === 'commercialisation') ps = ps.filter(p => getPhase(p.trl)==='commercialisation');
+  else if (currentFilter === 'critical') ps = ps.filter(p => p.status==='critical');
+  return ps;
+}
+
+function renderAll() {
+  updateStats();
+  renderSidebar();
+  renderFunnel();
+  renderList();
+  renderTRLFilter();
+}
+
+function updateStats() {
+  const all = projects;
+  document.getElementById('stat-total').textContent = all.length;
+  document.getElementById('stat-research').textContent = all.filter(p=>getPhase(p.trl)==='research').length;
+  document.getElementById('stat-dev').textContent = all.filter(p=>getPhase(p.trl)==='development').length;
+  document.getElementById('stat-comm').textContent = all.filter(p=>getPhase(p.trl)==='commercialisation').length;
+  document.getElementById('stat-critical').textContent = all.filter(p=>p.status==='critical').length;
+
+  document.getElementById('fc-all').textContent = all.length;
+  document.getElementById('fc-research').textContent = all.filter(p=>getPhase(p.trl)==='research').length;
+  document.getElementById('fc-dev').textContent = all.filter(p=>getPhase(p.trl)==='development').length;
+  document.getElementById('fc-comm').textContent = all.filter(p=>getPhase(p.trl)==='commercialisation').length;
+  document.getElementById('fc-crit').textContent = all.filter(p=>p.status==='critical').length;
+}
+
+function renderTRLFilter() {
+  const el = document.getElementById('trl-filter-list');
+  el.innerHTML = [1,2,3,4,5,6,7,8,9].map(trl => {
+    const c = getTRLColor(trl);
+    const count = projects.filter(p=>p.trl===trl).length;
+    return `<div class="trl-filter-item" onclick="filterByTRL(${trl})">
+      <div class="trl-dot" style="background:${c.dot}"></div>
+      <span class="trl-filter-label">TRL ${trl}</span>
+      <span class="trl-filter-count">${count}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderSidebar() {
+  const ps = filteredProjects();
+  const el = document.getElementById('sidebar-project-list');
+  if (!ps.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:12px;padding:20px">Proje bulunamadı</div>';
+    return;
+  }
+  el.innerHTML = ps.map(p => {
+    const c = getTRLColor(p.trl);
+    const st = STATUS_LABELS[p.status]||STATUS_LABELS.active;
+    return `<div class="project-card ${selectedProject===p.id?'selected':''}" onclick="selectProject('${p.id}')">
+      <div class="pc-head">
+        <div class="pc-name">${p.name}</div>
+        <div class="trl-badge" style="background:${c.bg};color:${c.text};border:1px solid ${c.border}">TRL${p.trl}</div>
+      </div>
+      <div class="pc-meta">${p.owner||''} ${p.category?'· '+p.category:''}</div>
+      <div class="pc-tags">
+        <span class="tag" style="color:${st.color};border-color:${st.color}44">${st.label}</span>
+        ${p.category?`<span class="tag">${p.category}</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderFunnel() {
+  const grid = document.getElementById('funnel-grid');
+  const fp = filteredProjects();
+  const cols = [1,2,3,4,5,6,7,8,9].map(trl => {
+    const c = getTRLColor(trl);
+    const ps = fp.filter(p => p.trl === trl);
+    const bubbles = ps.map(p => {
+      const st = STATUS_LABELS[p.status]||STATUS_LABELS.active;
+      return `<div class="proj-bubble"
+        style="background:${c.bg};border-color:${c.border}"
+        draggable="true"
+        data-id="${p.id}"
+        ondragstart="onDragStart(event,'${p.id}')"
+        onclick="selectProject('${p.id}')"
+        title="${p.name}">
+        <div class="pb-actions">
+          <button class="pb-btn" onclick="event.stopPropagation();openEditModal('${p.id}')" title="Düzenle">✏</button>
+        </div>
+        <div class="pb-name" style="color:${c.text}">${p.name}</div>
+        <div class="pb-sub" style="color:${c.text}">${p.category||''}</div>
+        ${p.status==='critical'?`<div style="font-size:9px;margin-top:3px;color:#fca5a5">⚠ Kritik</div>`:''}
+        ${p.status==='hold'?`<div style="font-size:9px;margin-top:3px;color:#fcd34d">⏸ Beklemede</div>`:''}
+      </div>`;
+    }).join('');
+
+    return `<div class="trl-column">
+      <div class="trl-col-header" style="background:${c.bg};color:${c.text};border:1px solid ${c.border}33"
+        title="${TRL_DESCRIPTIONS[trl]}">TRL ${trl}</div>
+      <div class="trl-col-drop" data-trl="${trl}"
+        ondragover="onDragOver(event)"
+        ondrop="onDrop(event,${trl})"
+        ondragleave="onDragLeave(event)">
+        ${bubbles}
+      </div>
+    </div>`;
+  }).join('');
+
+  // rebuild grid (keep first label cell)
+  const rows = grid.querySelectorAll('.trl-column');
+  rows.forEach(r => r.remove());
+  grid.insertAdjacentHTML('beforeend', cols);
+}
+
+function renderList() {
+  const fp = filteredProjects();
+  const body = document.getElementById('list-body');
+  if (!fp.length) {
+    body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text3)">Proje bulunamadı</td></tr>`;
+    return;
+  }
+  const phaseLabel = {research:'Araştırma',development:'Geliştirme',commercialisation:'Ticarileşme'};
+  const phaseColor = {research:'#9d7fe3',development:'#58a6ff',commercialisation:'#3fb950'};
+  body.innerHTML = fp.map(p => {
+    const c = getTRLColor(p.trl);
+    const st = STATUS_LABELS[p.status]||STATUS_LABELS.active;
+    const ph = getPhase(p.trl);
+    const totalProg = ((p.trl-1)*100/8 + (p.progress||0)/8).toFixed(0);
+    const d = p.updated ? new Date(p.updated).toLocaleDateString('tr-TR') : '-';
+    return `<tr onclick="selectProject('${p.id}')">
+      <td style="font-weight:500">${p.name}</td>
+      <td><span class="trl-badge" style="background:${c.bg};color:${c.text};border:1px solid ${c.border}">TRL ${p.trl}</span></td>
+      <td style="color:${phaseColor[ph]};font-size:12px">${phaseLabel[ph]}</td>
+      <td style="color:var(--text2);font-size:12px">${p.category||'-'}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="progress-bar"><div class="progress-fill" style="width:${totalProg}%;background:${c.dot}"></div></div>
+          <span style="font-size:11px;color:var(--text3)">${totalProg}%</span>
+        </div>
+      </td>
+      <td><span style="color:${st.color};font-size:12px">${st.label}</span></td>
+      <td style="color:var(--text3);font-size:12px">${d}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openEditModal('${p.id}')">Düzenle</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// DRAG & DROP
+// ═══════════════════════════════════════════
+let dragId = null;
+function onDragStart(e, id) {
+  dragId = id;
+  e.target.closest('.proj-bubble').classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function onDragOver(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+}
+function onDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+function onDrop(e, trl) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (!dragId) return;
+  const p = projects.find(x=>x.id===dragId);
+  if (p && p.trl !== trl) {
+    p.trl = trl;
+    p.progress = 0;
+    p.updated = new Date().toISOString();
+    saveProjects(projects);
+    renderAll();
+    showToast(`"${p.name}" TRL ${trl} seviyesine taşındı`, 'success');
+    if (selectedProject === p.id) showDetail(p.id);
+  }
+  dragId = null;
+  document.querySelectorAll('.proj-bubble.dragging').forEach(b=>b.classList.remove('dragging'));
+}
+
+// ═══════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════
+function buildTRLSelector(selected) {
+  const el = document.getElementById('trl-selector');
+  el.innerHTML = [1,2,3,4,5,6,7,8,9].map(trl => {
+    const c = getTRLColor(trl);
+    const sel = selected===trl;
+    return `<button class="trl-sel-btn ${sel?'selected':''}"
+      style="${sel?`background:${c.bg};border-color:${c.border};color:${c.text}`:''}"
+      onclick="selectTRL(${trl})">${trl}</button>`;
+  }).join('');
+  updateTRLDesc(selected);
+}
+function selectTRL(trl) {
+  selectedTRL = trl;
+  buildTRLSelector(trl);
+  updateTRLDesc(trl);
+}
+function updateTRLDesc(trl) {
+  const el = document.getElementById('trl-desc-text');
+  if (!trl) { el.textContent = 'TRL seviyesi seçin...'; return; }
+  const c = getTRLColor(trl);
+  el.style.borderLeftColor = c.border;
+  el.innerHTML = `<strong style="color:${c.text}">TRL ${trl}</strong> — ${TRL_DESCRIPTIONS[trl]}`;
+}
+function openAddModal() {
+  editingId = null;
+  selectedTRL = null;
+  document.getElementById('modal-title').textContent = 'Yeni Proje Ekle';
+  document.getElementById('btn-delete').classList.add('hidden');
+  clearForm();
+  buildTRLSelector(null);
+  document.getElementById('proj-modal').classList.add('open');
+}
+function openEditModal(id) {
+  const p = projects.find(x=>x.id===id);
+  if (!p) return;
+  editingId = id;
+  selectedTRL = p.trl;
+  document.getElementById('modal-title').textContent = 'Projeyi Düzenle';
+  document.getElementById('btn-delete').classList.remove('hidden');
+  document.getElementById('f-name').value = p.name||'';
+  document.getElementById('f-desc').value = p.desc||'';
+  document.getElementById('f-category').value = p.category||'';
+  document.getElementById('f-status').value = p.status||'active';
+  document.getElementById('f-progress').value = p.progress||0;
+  document.getElementById('f-owner').value = p.owner||'';
+  document.getElementById('f-start').value = p.start||'';
+  document.getElementById('f-target').value = p.target||'';
+  document.getElementById('f-notes').value = p.notes||'';
+  buildTRLSelector(p.trl);
+  document.getElementById('proj-modal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('proj-modal').classList.remove('open');
+}
+function clearForm() {
+  ['f-name','f-desc','f-owner','f-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-category').value='';
+  document.getElementById('f-status').value='active';
+  document.getElementById('f-progress').value=0;
+  document.getElementById('f-start').value='';
+  document.getElementById('f-target').value='';
+}
+function saveProject() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { showToast('Proje adı zorunlu!','error'); return; }
+  if (!selectedTRL) { showToast('TRL seviyesi seçin!','error'); return; }
+  const data = {
+    name, trl: selectedTRL,
+    desc: document.getElementById('f-desc').value.trim(),
+    category: document.getElementById('f-category').value,
+    status: document.getElementById('f-status').value,
+    progress: parseInt(document.getElementById('f-progress').value)||0,
+    owner: document.getElementById('f-owner').value.trim(),
+    start: document.getElementById('f-start').value,
+    target: document.getElementById('f-target').value,
+    notes: document.getElementById('f-notes').value.trim(),
+    updated: new Date().toISOString(),
+  };
+  if (editingId) {
+    const idx = projects.findIndex(p=>p.id===editingId);
+    if (idx>=0) projects[idx] = {...projects[idx],...data};
+    showToast('Proje güncellendi','success');
+    if (selectedProject===editingId) showDetail(editingId);
+  } else {
+    data.id = gen();
+    projects.push(data);
+    showToast('Proje eklendi','success');
+  }
+  saveProjects(projects);
+  closeModal();
+  renderAll();
+}
+function deleteProject() {
+  if (!editingId) return;
+  const p = projects.find(x=>x.id===editingId);
+  if (!confirm(`"${p?.name}" silinsin mi?`)) return;
+  projects = projects.filter(x=>x.id!==editingId);
+  saveProjects(projects);
+  closeModal();
+  if (selectedProject===editingId) closeDetail();
+  renderAll();
+  showToast('Proje silindi');
+}
+
+// ═══════════════════════════════════════════
+// DETAIL PANEL
+// ═══════════════════════════════════════════
+function selectProject(id) {
+  selectedProject = id;
+  showDetail(id);
+  renderSidebar();
+}
+function showDetail(id) {
+  const p = projects.find(x=>x.id===id);
+  if (!p) return;
+  const panel = document.getElementById('detail-panel');
+  panel.classList.remove('closed');
+  document.getElementById('dp-title').textContent = p.name;
+  const c = getTRLColor(p.trl);
+  const st = STATUS_LABELS[p.status]||STATUS_LABELS.active;
+  const phaseLabel = {research:'Araştırma (TRL 1-3)',development:'Geliştirme (TRL 4-6)',commercialisation:'Ticarileşme (TRL 7-9)'};
+  const totalProg = ((p.trl-1)*100/8 + (p.progress||0)/8).toFixed(0);
+  const blockers = getBlockers(p.id);
+  const activeBlockers = blockers.filter(b=>!b.resolved).length;
+
+  const pips = [1,2,3,4,5,6,7,8,9].map(t => {
+    const col = getTRLColor(t);
+    const filled = t <= p.trl;
+    return `<div class="trl-pip ${filled?'filled':''}" style="${filled?'background:'+col.dot:''}"></div>`;
+  }).join('');
+
+  document.getElementById('dp-body').innerHTML = `
+    <div class="dp-tabs">
+      <button class="dp-tab active" onclick="switchDpTab(event,'tab-info-${p.id}')">Bilgi</button>
+      <button class="dp-tab" onclick="switchDpTab(event,'tab-check-${p.id}')">✓ Geçiş Kriterleri</button>
+      <button class="dp-tab" onclick="switchDpTab(event,'tab-block-${p.id}')" style="${activeBlockers>0?'color:#ef4444':''}">
+        ⚠ Engeller${activeBlockers>0?' ('+activeBlockers+')':''}
+      </button>
+    </div>
+
+    <!-- TAB: BİLGİ -->
+    <div id="tab-info-${p.id}" class="dp-tab-content active">
+      <div style="margin-bottom:12px">
+        <div class="dp-section-title">TRL Durumu</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span class="trl-badge" style="font-size:13px;padding:4px 12px;background:${c.bg};color:${c.text};border:1px solid ${c.border}">TRL ${p.trl}</span>
+          <span style="font-size:12px;color:var(--text2)">${phaseLabel[getPhase(p.trl)]}</span>
+        </div>
+        <div class="trl-progress-viz">${pips}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:6px">${TRL_DESCRIPTIONS[p.trl]}</div>
+      </div>
+      <div style="margin-bottom:12px">
+        <div class="dp-section-title">Genel İlerleme</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="progress-bar" style="width:100%;height:8px;flex:1">
+            <div class="progress-fill" style="width:${totalProg}%;background:${c.dot}"></div>
+          </div>
+          <span style="font-size:13px;font-weight:600;color:${c.dot}">${totalProg}%</span>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">TRL ${p.trl} içinde %${p.progress||0} tamamlandı</div>
+      </div>
+      <div style="margin-bottom:12px">
+        <div class="dp-section-title">Detaylar</div>
+        ${field('Durum', `<span style="color:${st.color}">${st.label}</span>`)}
+        ${field('Kategori', p.category||'-')}
+        ${field('Sorumlu', p.owner||'-')}
+        ${p.start?field('Başlangıç', new Date(p.start).toLocaleDateString('tr-TR')):''}
+        ${p.target?field('Hedef Tarih', new Date(p.target).toLocaleDateString('tr-TR')):''}
+      </div>
+      ${p.desc?`<div style="margin-bottom:12px"><div class="dp-section-title">Açıklama</div><div style="font-size:13px;color:var(--text2);line-height:1.6">${p.desc}</div></div>`:''}
+      ${p.notes?`<div style="margin-bottom:12px"><div class="dp-section-title">Notlar</div><div style="font-size:13px;color:var(--text2);line-height:1.6;background:var(--bg3);padding:10px;border-radius:6px;border-left:3px solid ${p.status==='critical'?'#ef4444':'var(--border2)'}">${p.notes}</div></div>`:''}
+      <button class="btn btn-ghost" style="width:100%;margin-top:4px" onclick="openEditModal('${p.id}')">✏ Düzenle</button>
+    </div>
+
+    <!-- TAB: GEÇİŞ KRİTERLERİ -->
+    <div id="tab-check-${p.id}" class="dp-tab-content">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">
+        TRL ${p.trl} → TRL ${p.trl+1} geçişi için tamamlanması gerekenler:
+      </div>
+      <div id="checklist-container-${p.id}"></div>
+    </div>
+
+    <!-- TAB: ENGELLER -->
+    <div id="tab-block-${p.id}" class="dp-tab-content">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">
+        Projenin ilerlemesini engelleyen teknik, kaynak veya bağımlılık sorunları:
+      </div>
+      <div id="blocker-container-${p.id}"></div>
+    </div>
+  `;
+
+  // Lazy render (sadece aktif tab görüntülenince)
+  renderChecklistSection(p.id, p.trl);
+  renderBlockerSection(p.id);
+}
+
+function switchDpTab(e, tabId) {
+  const body = document.getElementById('dp-body');
+  body.querySelectorAll('.dp-tab').forEach(t=>t.classList.remove('active'));
+  body.querySelectorAll('.dp-tab-content').forEach(t=>t.classList.remove('active'));
+  e.target.classList.add('active');
+  const tc = document.getElementById(tabId);
+  if (tc) tc.classList.add('active');
+}
+function field(label, val) {
+  return `<div class="dp-field"><div class="dp-field-label">${label}</div><div class="dp-field-value">${val}</div></div>`;
+}
+function closeDetail() {
+  selectedProject = null;
+  document.getElementById('detail-panel').classList.add('closed');
+  renderSidebar();
+}
+
+// ═══════════════════════════════════════════
+// FILTERS & VIEW
+// ═══════════════════════════════════════════
+function setPhaseFilter(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAll();
+}
+function filterByTRL(trl) {
+  searchTerm = 'TRL'+trl;
+  document.getElementById('search-input').value = 'TRL'+trl;
+  filterProjects();
+}
+function filterProjects() {
+  searchTerm = document.getElementById('search-input').value;
+  renderFunnel();
+  renderList();
+  renderSidebar();
+}
+function setView(view, btn) {
+  currentView = view;
+  document.querySelectorAll('.view-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('funnel-view').classList.toggle('hidden', view!=='funnel');
+  document.getElementById('list-view').classList.toggle('hidden', view!=='list');
+}
+
+// ═══════════════════════════════════════════
+// IMPORT / EXPORT
+// ═══════════════════════════════════════════
+function exportData() {
+  const blob = new Blob([JSON.stringify(projects, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `trl_portfolio_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  showToast('Dışa aktarıldı', 'success');
+}
+function importData() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.json';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!Array.isArray(data)) throw new Error();
+        if (confirm(`${data.length} proje içe aktarılsın mı? Mevcut veriler korunacak.`)) {
+          data.forEach(p => { if (!projects.find(x=>x.id===p.id)) projects.push(p); });
+          saveProjects(projects);
+          renderAll();
+          showToast(`${data.length} proje içe aktarıldı`, 'success');
+        }
+      } catch(e) { showToast('Geçersiz dosya', 'error'); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// ═══════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════
+let toastTimer;
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type}`;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── Close modal on overlay click ──
+document.getElementById('proj-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+
+// ── TRL GEÇİŞ KRİTERLERİ (şirkete özgü) ──
+const TRL_CRITERIA = {
+  1: [
+    "Temel fizik/kimya prensibi literatürde doğrulandı",
+    "Teknoloji konsepti yazılı olarak tanımlandı",
+    "İlgili akademik kaynaklar tarandı ve belgelendi",
+  ],
+  2: [
+    "Uygulama alanı ve kullanım senaryosu tanımlandı",
+    "Konsept tasarım dokümanı (tek sayfa min.) hazırlandı",
+    "Başlangıç risk analizi yapıldı",
+    "Gerekli malzeme/ekipman listesi çıkarıldı",
+  ],
+  3: [
+    "Analitik model veya simülasyon oluşturuldu",
+    "Kritik fonksiyon laboratuvar ortamında test edildi",
+    "Deneysel kanıt dokümanı hazırlandı",
+    "FEM veya sayısal analiz tamamlandı (varsa)",
+    "Konsept kanıtı (PoC) raporu yazıldı",
+  ],
+  4: [
+    "Bileşen/alt sistem laboratuvar prototipi üretildi",
+    "Kontrollü ortamda fonksiyonel test gerçekleştirildi",
+    "Test verisi kayıt altına alındı ve analiz edildi",
+    "Tasarım iterasyonu tamamlandı",
+    "Üretim uygulanabilirliği değerlendirmesi yapıldı",
+  ],
+  5: [
+    "İlgili ortamda (relevant environment) entegrasyon testi",
+    "Alt sistem performans metrikleri tanımlandı ve ölçüldü",
+    "Bileşen ara yüzleri doğrulandı",
+    "Güvenilirlik ön değerlendirmesi yapıldı",
+    "Ölçeklendirme analizi tamamlandı",
+  ],
+  6: [
+    "Sistem/alt sistem prototipi ilgili ortamda gösterildi",
+    "Tam fonksiyonel prototip hazır",
+    "Performans gereksinimleri %80+ karşılandı",
+    "Güvenlik analizi tamamlandı",
+    "Müşteri/paydaş incelemesi gerçekleştirildi",
+    "Üretim maliyeti ön analizi yapıldı",
+  ],
+  7: [
+    "Operasyonel ortamda sistem prototipi gösterildi",
+    "Gerçek kullanım koşullarında test tamamlandı",
+    "Tüm temel fonksiyonlar doğrulandı",
+    "Güvenilirlik testleri (MTBF vb.) başladı",
+    "Bakım/onarım prosedürleri taslağı hazırlandı",
+    "Sertifikasyon gereksinikleri belirlendi",
+  ],
+  8: [
+    "Sistem tamamlandı ve vasıflı testler başarıyla geçildi",
+    "Sertifikasyon testleri tamamlandı (varsa)",
+    "Son tasarım donduruldu (Design Freeze)",
+    "Seri üretim planı hazırlandı",
+    "Kalite kontrol prosedürleri oluşturuldu",
+    "Müşteri kabul testi (FAT) tamamlandı",
+  ],
+  9: [
+    "Gerçek operasyonel ortamda saha kanıtı mevcut",
+    "Seri üretim gerçekleşiyor veya kapasitesi hazır",
+    "Müşteri referansları ve geri bildirimleri mevcut",
+    "Sürekli iyileştirme süreci (KAIZEN) aktif",
+    "Dokümantasyon ve eğitim materyalleri tam",
+  ],
+};
+
+// ── ŞİRKET HAFIZASI VERİSİ ──
+function loadMemory() {
+  try { return JSON.parse(localStorage.getItem('trl_memory') || '[]'); } catch(e) { return []; }
+}
+function saveMemory(mem) { localStorage.setItem('trl_memory', JSON.stringify(mem)); }
+
+let companyMemory = loadMemory();
+
+// Başlangıç hafıza verileri
+if (companyMemory.length === 0) {
+  companyMemory = [
+    {id:gen(), type:'lesson', text:'Filament winding ıslak sarımda resin karışım oranı, ortam sıcaklığına göre ayarlanmazsa kürleme sonrası delaminasyon riski artıyor.', project:'Genel Üretim', date: new Date().toISOString()},
+    {id:gen(), type:'lesson', text:'Patlatma testinden önce sızdırmazlık testi tamamlanmadan prototip sayısı artırılmamalı — Tip-4 Tank deneyiminden öğrenildi.', project:'Standart Tip-4 Tank', date: new Date().toISOString()},
+    {id:gen(), type:'mistake', text:'Polimer liner üretimini dış firmaya bırakmak proje bağımlılığı yaratıyor. Kritik ara malzemelerde yerli kapasite önceliklendirilmeli.', project:'Standart Tip-4 Tank', date: new Date().toISOString()},
+    {id:gen(), type:'rule', text:'Müşteri liner göndermeden tank sarım siparişi alınmamalı — liner gecikmesi tüm takvimi etkiliyor.', project:'Standart Tip-3 Tank', date: new Date().toISOString()},
+    {id:gen(), type:'standard', text:'Sleeve sarım açısı standart olarak 90° kullanılıyor. AI Platform hedefi: müşteri girdisine göre optimal açı hesabı.', project:'Composite Sleeve', date: new Date().toISOString()},
+  ];
+  saveMemory(companyMemory);
+}
+
+
+// ── CHECKLIST FONKSİYONLARI ──
+function getChecklist(projectId, trl) {
+  const key = 'chk_' + projectId + '_' + trl;
+  try {
+    const stored = JSON.parse(localStorage.getItem(key) || 'null');
+    if (stored) return stored;
+  } catch(e) {}
+  // Default: TRL kriterleri
+  return (TRL_CRITERIA[trl] || []).map((text, i) => ({id: 'c'+i, text, done: false}));
+}
+function saveChecklist(projectId, trl, items) {
+  const key = 'chk_' + projectId + '_' + trl;
+  localStorage.setItem(key, JSON.stringify(items));
+}
+function toggleCheck(projectId, trl, itemId) {
+  const items = getChecklist(projectId, trl);
+  const item = items.find(x=>x.id===itemId);
+  if (item) item.done = !item.done;
+  saveChecklist(projectId, trl, items);
+  // Re-render checklist section only
+  renderChecklistSection(projectId, trl);
+}
+function addCheckItem(projectId, trl) {
+  const input = document.getElementById('chk-input-'+projectId);
+  const text = input.value.trim();
+  if (!text) return;
+  const items = getChecklist(projectId, trl);
+  items.push({id:'c'+Date.now(), text, done:false});
+  saveChecklist(projectId, trl, items);
+  input.value = '';
+  renderChecklistSection(projectId, trl);
+}
+function renderChecklistSection(projectId, trl) {
+  const container = document.getElementById('checklist-container-'+projectId);
+  if (!container) return;
+  const items = getChecklist(projectId, trl);
+  const done = items.filter(x=>x.done).length;
+  const pct = items.length ? Math.round(done/items.length*100) : 0;
+  const c = getTRLColor(trl);
+  container.innerHTML = `
+    <div class="check-progress">
+      <div class="progress-bar" style="flex:1;height:6px">
+        <div class="progress-fill" style="width:${pct}%;background:${c.dot}"></div>
+      </div>
+      <span class="check-pct" style="color:${c.dot}">${pct}%</span>
+      <span style="font-size:11px;color:var(--text3)">${done}/${items.length}</span>
+    </div>
+    <div class="checklist">
+      ${items.map(item => `
+        <div class="check-item ${item.done?'done':''}">
+          <input type="checkbox" class="check-cb" ${item.done?'checked':''}
+            onchange="toggleCheck('${projectId}',${trl},'${item.id}')">
+          <span class="check-label">${item.text}</span>
+        </div>`).join('')}
+    </div>
+    <div class="check-add">
+      <input id="chk-input-${projectId}" placeholder="Yeni kriter ekle..." 
+        onkeydown="if(event.key==='Enter')addCheckItem('${projectId}',${trl})">
+      <button class="btn btn-ghost btn-sm" onclick="addCheckItem('${projectId}',${trl})">+</button>
+    </div>`;
+}
+
+// ── BLOCKER FONKSİYONLARI ──
+function getBlockers(projectId) {
+  try { return JSON.parse(localStorage.getItem('blk_'+projectId) || '[]'); } catch(e) { return []; }
+}
+function saveBlockers(projectId, blockers) {
+  localStorage.setItem('blk_'+projectId, JSON.stringify(blockers));
+}
+function addBlocker(projectId) {
+  const input = document.getElementById('blk-input-'+projectId);
+  const text = input.value.trim();
+  if (!text) return;
+  const blockers = getBlockers(projectId);
+  blockers.unshift({id:'b'+Date.now(), text, resolved:false, date: new Date().toISOString()});
+  saveBlockers(projectId, blockers);
+  input.value = '';
+  renderBlockerSection(projectId);
+}
+function resolveBlocker(projectId, blockerId) {
+  const blockers = getBlockers(projectId);
+  const b = blockers.find(x=>x.id===blockerId);
+  if (b) b.resolved = true;
+  saveBlockers(projectId, blockers);
+  renderBlockerSection(projectId);
+}
+function deleteBlocker(projectId, blockerId) {
+  let blockers = getBlockers(projectId);
+  blockers = blockers.filter(x=>x.id!==blockerId);
+  saveBlockers(projectId, blockers);
+  renderBlockerSection(projectId);
+}
+function renderBlockerSection(projectId) {
+  const container = document.getElementById('blocker-container-'+projectId);
+  if (!container) return;
+  const blockers = getBlockers(projectId);
+  const active = blockers.filter(x=>!x.resolved);
+  const resolved = blockers.filter(x=>x.resolved);
+  container.innerHTML = `
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <input id="blk-input-${projectId}" class="form-input" style="flex:1;padding:6px 9px;font-size:12px"
+        placeholder="Engeli tanımla (teknik, kaynak, bağımlılık...)"
+        onkeydown="if(event.key==='Enter')addBlocker('${projectId}')">
+      <button class="btn btn-danger btn-sm" onclick="addBlocker('${projectId}')">+ Engel</button>
+    </div>
+    ${active.length===0 ? '<div style="text-align:center;padding:12px;color:var(--text3);font-size:12px">✓ Aktif engel yok</div>' : ''}
+    ${active.map(b=>`
+      <div class="blocker-item">
+        <div class="blocker-text">${b.text}</div>
+        <div class="blocker-meta">${new Date(b.date).toLocaleDateString('tr-TR')}</div>
+        <div class="blocker-actions">
+          <button class="blocker-btn resolve" onclick="resolveBlocker('${projectId}','${b.id}')">✓ Çözüldü</button>
+          <button class="blocker-btn delete" onclick="deleteBlocker('${projectId}','${b.id}')">✕</button>
+        </div>
+      </div>`).join('')}
+    ${resolved.length>0 ? `<div style="font-size:10px;color:var(--text3);margin-top:8px;margin-bottom:4px">ÇÖZÜLENLER</div>
+      ${resolved.map(b=>`
+      <div class="blocker-item resolved">
+        <div class="blocker-text">${b.text}</div>
+        <div class="blocker-meta">${new Date(b.date).toLocaleDateString('tr-TR')}</div>
+        <div class="blocker-actions">
+          <button class="blocker-btn delete" onclick="deleteBlocker('${projectId}','${b.id}')">✕</button>
+        </div>
+      </div>`).join('')}` : ''}`;
+}
+
+// ── ŞİRKET HAFIZASI FONKSİYONLARI ──
+function openMemory() {
+  renderMemoryPanel();
+  document.getElementById('memory-panel').classList.add('open');
+  document.getElementById('memory-overlay').classList.add('open');
+}
+function closeMemory() {
+  document.getElementById('memory-panel').classList.remove('open');
+  document.getElementById('memory-overlay').classList.remove('open');
+}
+function renderMemoryPanel() {
+  const TYPE_CFG = {
+    lesson:   {label:'Öğrenilen Ders', cls:'mem-type-lesson',   icon:'💡'},
+    mistake:  {label:'Tekrarlanan Hata', cls:'mem-type-mistake', icon:'⚠️'},
+    standard: {label:'Üretim Standardı', cls:'mem-type-standard',icon:'📐'},
+    rule:     {label:'Kural', cls:'mem-type-rule',               icon:'📌'},
+  };
+  const groups = {lesson:[], mistake:[], standard:[], rule:[]};
+  companyMemory.forEach(m => { if(groups[m.type]) groups[m.type].push(m); });
+
+  let html = '';
+  for (const [type, items] of Object.entries(groups)) {
+    const cfg = TYPE_CFG[type];
+    if (!items.length) continue;
+    html += `<div class="memory-section">
+      <div class="memory-section-title"><span>${cfg.icon} ${cfg.label} (${items.length})</span></div>
+      ${items.map(m=>`
+        <div class="memory-card">
+          <button class="memory-del" onclick="deleteMemory('${m.id}')">×</button>
+          <div class="memory-card-text">${m.text}</div>
+          <div class="memory-card-meta">${m.project ? '📁 '+m.project+' · ':''} ${new Date(m.date).toLocaleDateString('tr-TR')}</div>
+        </div>`).join('')}
+    </div>`;
+  }
+
+  html += `<div class="memory-add-form">
+    <div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:4px">YENİ KAYIT EKLE</div>
+    <select id="mem-type">
+      <option value="lesson">💡 Öğrenilen Ders</option>
+      <option value="mistake">⚠️ Tekrarlanan Hata</option>
+      <option value="standard">📐 Üretim Standardı</option>
+      <option value="rule">📌 Kural</option>
+    </select>
+    <input id="mem-project" placeholder="İlgili proje (opsiyonel)">
+    <textarea id="mem-text" placeholder="Öğrenilen ders, tekrar eden hata, kural veya standart..."></textarea>
+    <button class="btn btn-primary btn-sm" onclick="addMemory()">Kaydet</button>
+  </div>`;
+
+  document.getElementById('memory-body').innerHTML = html;
+}
+function addMemory() {
+  const text = document.getElementById('mem-text').value.trim();
+  if (!text) return;
+  companyMemory.unshift({
+    id: gen(),
+    type: document.getElementById('mem-type').value,
+    text,
+    project: document.getElementById('mem-project').value.trim(),
+    date: new Date().toISOString()
+  });
+  saveMemory(companyMemory);
+  renderMemoryPanel();
+  showToast('Hafızaya eklendi', 'success');
+}
+function deleteMemory(id) {
+  companyMemory = companyMemory.filter(x=>x.id!==id);
+  saveMemory(companyMemory);
+  renderMemoryPanel();
+}
+
+
+// ── PAYLAŞIM SİSTEMİ ──
+function buildSharePayload() {
+  // Tüm verileri topla
+  const payload = {
+    v: 'v2-company-2025',
+    ts: new Date().toISOString(),
+    projects,
+    memory: companyMemory,
+    checklists: {},
+    blockers: {},
+  };
+  // Her projenin checklist ve blocker verilerini topla
+  projects.forEach(p => {
+    const chkKey = 'chk_' + p.id + '_' + p.trl;
+    const blkKey = 'blk_' + p.id;
+    try {
+      const chk = localStorage.getItem(chkKey);
+      if (chk) payload.checklists[p.id + '_' + p.trl] = JSON.parse(chk);
+    } catch(e) {}
+    try {
+      const blk = localStorage.getItem(blkKey);
+      if (blk) payload.blockers[p.id] = JSON.parse(blk);
+    } catch(e) {}
+  });
+  return payload;
+}
+
+function compressToURL(payload) {
+  const json = JSON.stringify(payload);
+  // Base64 encode (URL-safe)
+  const encoded = btoa(unescape(encodeURIComponent(json)));
+  return encoded;
+}
+
+function decompressFromURL(encoded) {
+  try {
+    const json = decodeURIComponent(escape(atob(encoded)));
+    return JSON.parse(json);
+  } catch(e) { return null; }
+}
+
+function openShareModal() {
+  const payload = buildSharePayload();
+  const encoded = compressToURL(payload);
+  const url = window.location.href.split('?')[0].split('#')[0] + '?data=' + encoded;
+  document.getElementById('share-link-input').value = url;
+  document.getElementById('share-modal').classList.add('open');
+}
+
+function closeShareModal() {
+  document.getElementById('share-modal').classList.remove('open');
+}
+
+function copyShareLink() {
+  const input = document.getElementById('share-link-input');
+  navigator.clipboard.writeText(input.value).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✓ Kopyalandı';
+    btn.style.background = '#0f3a1a';
+    btn.style.color = '#3fb950';
+    setTimeout(() => {
+      btn.textContent = 'Kopyala';
+      btn.style.background = '';
+      btn.style.color = '';
+    }, 2000);
+    showToast('Link kopyalandı!', 'success');
+  }).catch(() => {
+    input.select();
+    document.execCommand('copy');
+    showToast('Link kopyalandı!', 'success');
+  });
+}
+
+// Sayfa açılışında URL'den veri yükle
+function checkURLData() {
+  const params = new URLSearchParams(window.location.search);
+  const encoded = params.get('data');
+  if (!encoded) return false;
+  const payload = decompressFromURL(encoded);
+  if (!payload || !payload.projects) return false;
+
+  // Veriyi localStorage'a yaz
+  localStorage.setItem('trl_projects', JSON.stringify(payload.projects));
+  localStorage.setItem('trl_data_version', payload.v || 'v2-company-2025');
+  if (payload.memory) localStorage.setItem('trl_memory', JSON.stringify(payload.memory));
+
+  // Checklist ve blocker'ları yaz
+  if (payload.checklists) {
+    Object.entries(payload.checklists).forEach(([key, val]) => {
+      localStorage.setItem('chk_' + key, JSON.stringify(val));
+    });
+  }
+  if (payload.blockers) {
+    Object.entries(payload.blockers).forEach(([key, val]) => {
+      localStorage.setItem('blk_' + key, JSON.stringify(val));
+    });
+  }
+
+  // URL'i temizle (veri localStorage'a alındı)
+  window.history.replaceState({}, document.title, window.location.pathname);
+  showToast('Paylaşılan portföy yüklendi ✓', 'success');
+  return true;
+}
+
+// ── Init ──
+// URL'den paylaşılan veri varsa önce yükle, sonra render
+checkURLData();
+projects = initProjects();
+saveProjects(projects);
+renderAll();
+</script>
+
+<!-- MEMORY OVERLAY -->
+<div class="memory-overlay" id="memory-overlay" onclick="closeMemory()"></div>
+
+<!-- ŞİRKET HAFIZASI PANELİ -->
+<div class="memory-panel" id="memory-panel">
+  <div class="memory-header">
+    <div>
+      <div style="font-size:14px;font-weight:600">🧠 Şirket Hafızası</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:2px">Öğrenilen dersler · Hatalar · Kurallar</div>
+    </div>
+    <button class="modal-close" onclick="closeMemory()">×</button>
+  </div>
+  <div class="memory-body" id="memory-body">
+    <!-- rendered by JS -->
+  </div>
+</div>
+
+
+<!-- SHARE MODAL -->
+<div class="modal-overlay" id="share-modal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <div class="modal-title">🔗 Paylaşım Linki Oluştur</div>
+      <button class="modal-close" onclick="closeShareModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="share-info">
+        Tüm proje verileri, engeller ve hafıza kayıtları bu linke sıkıştırılır.
+        Linki WhatsApp, e-posta veya herhangi bir uygulamadan paylaşabilirsiniz.
+        Linki açan kişi <strong>aynı veriyi</strong> görür.
+      </div>
+      <div class="form-group">
+        <label class="form-label">Paylaşım Linki</label>
+        <div class="share-link-box">
+          <input class="share-link-input" id="share-link-input" readonly />
+          <button class="btn btn-primary btn-sm" onclick="copyShareLink()" id="copy-btn">Kopyala</button>
+        </div>
+      </div>
+      <div class="share-warning">
+        ⚠ Link sadece <strong>anlık veriyi</strong> içerir. Sonraki güncellemeler için yeni link oluşturmanız gerekir. Danışmanınızın yaptığı değişiklikler size otomatik yansımaz.
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeShareModal()">Kapat</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
